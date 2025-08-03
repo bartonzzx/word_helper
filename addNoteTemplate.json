@@ -1,0 +1,21 @@
+{
+   "action":"addNotes",
+   "version":6,
+   "params":{
+      "notes":[
+         {
+            "deckName":"Geography",
+            "modelName":"Word Cloze",
+            "fields":{
+               "Word":"",
+               "Properties":"{{c1::}}",
+               "Synonyms":"{{c1::}}",
+               "Antonyms":"{{c1::}}",
+               "Other_forms":"{{c1::}}",
+               "Example":"{{c1::}}",
+               "Chinese_meaning":"{{c1::}}"
+            }
+         }
+      ]
+   }
+}
