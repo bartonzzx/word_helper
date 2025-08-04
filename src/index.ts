@@ -27,7 +27,7 @@ server.tool(
     other_forms: z.string().describe("Other forms of the word"),
     example: z.string().describe("Example sentences using the word"),
     chinese_meaning: z.string().describe("Chinese meaning of the word"),
-    deckName: z.string().default("Geography").describe("Anki deck name"),
+    deckName: z.string().describe("Anki deck name"),
     modelName: z.string().default("Word Cloze").describe("Anki model name"),
     audioUrlUk: z.string().describe("URL for UK pronunciation audio"),
     audioUrlUs: z.string().describe("URL for US pronunciation audio"),
@@ -52,7 +52,7 @@ server.tool(
     other_forms: string; 
     example: string; 
     chinese_meaning: string; 
-    deckName?: string; 
+    deckName: string; 
     modelName?: string;
     audioUrlUk: string;
     audioUrlUs: string;
