@@ -52,6 +52,9 @@ server.tool(
     modelName?: string; 
   }) => {
     try {
+      // Convert \n to <br> for proper display in Anki
+      const convertNewlines = (text: string) => text.replace(/\n/g, '<br>');
+      
       const ankiRequest = {
         action: "addNotes",
         version: 6,
@@ -62,12 +65,12 @@ server.tool(
               modelName: modelName,
               fields: {
                 Word: word,
-                Properties: `{{c1::${properties}}}`,
-                Synonym: `{{c1::${synonyms}}}`,
-                Antonym: `{{c1::${antonyms}}}`,
-                Other_forms: `{{c1::${other_forms}}}`,
-                Example: `{{c1::${example}}}`,
-                Chinese_meaning: `{{c1::${chinese_meaning}}}`
+                Properties: `{{c1::${convertNewlines(properties)}}}`,
+                Synonym: `{{c1::${convertNewlines(synonyms)}}}`,
+                Antonym: `{{c1::${convertNewlines(antonyms)}}}`,
+                Other_forms: `{{c1::${convertNewlines(other_forms)}}}`,
+                Example: `{{c1::${convertNewlines(example)}}}`,
+                Chinese_meaning: `{{c1::${convertNewlines(chinese_meaning)}}}`
               }
             }
           ]
