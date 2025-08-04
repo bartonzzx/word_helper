@@ -29,6 +29,8 @@ server.tool(
     chinese_meaning: z.string().describe("Chinese meaning of the word"),
     deckName: z.string().default("Geography").describe("Anki deck name"),
     modelName: z.string().default("Word Cloze").describe("Anki model name"),
+    audioUrlUk: z.string().describe("URL for UK pronunciation audio"),
+    audioUrlUs: z.string().describe("URL for US pronunciation audio"),
   },
   async ({ 
     word, 
@@ -39,7 +41,9 @@ server.tool(
     example, 
     chinese_meaning, 
     deckName = "Geography", 
-    modelName = "Word Cloze" 
+    modelName = "Word Cloze",
+    audioUrlUk,
+    audioUrlUs
   }: { 
     word: string; 
     properties: string; 
@@ -49,7 +53,9 @@ server.tool(
     example: string; 
     chinese_meaning: string; 
     deckName?: string; 
-    modelName?: string; 
+    modelName?: string;
+    audioUrlUk: string;
+    audioUrlUs: string;
   }) => {
     try {
       // Convert \n to <br> for proper display in Anki
@@ -71,7 +77,19 @@ server.tool(
                 Other_forms: `{{c1::${convertNewlines(other_forms)}}}`,
                 Example: `{{c1::${convertNewlines(example)}}}`,
                 Chinese_meaning: `{{c1::${convertNewlines(chinese_meaning)}}}`
-              }
+              },
+              audio: [
+                {
+                  url: audioUrlUk,
+                  filename: `${word}_uk.mp3`,
+                  fields: ["Word reading"]
+                },
+                {
+                  url: audioUrlUs,
+                  filename: `${word}_us.mp3`,
+                  fields: ["Word reading"]
+                }
+              ]
             }
           ]
         }
@@ -176,6 +194,8 @@ server.tool(
       }
 
       let result = `Definitions for "${word}":\n\n`;
+      let audioUrlUk = '';
+      let audioUrlUs = '';
 
       for (const entry of entries) {
         const headword = entry.querySelector('.headword')?.textContent?.trim() || word;
@@ -189,6 +209,64 @@ server.tool(
           if (ukPron || usPron) {
             pronunciation = `[UK: ${ukPron}] [US: ${usPron}]\n`;
           }
+        }
+
+        // Get audio URLs - look for audio elements with source tags
+        if (!audioUrlUk) {
+          // Try to find UK audio element (audio1)
+          const ukAudio = entry.querySelector('#audio1') || doc.querySelector('#audio1');
+          if (ukAudio) {
+            const source = ukAudio.querySelector('source[type="audio/mpeg"]');
+            if (source) {
+              const src = source.getAttribute('src');
+              if (src) {
+                audioUrlUk = src.startsWith('http') ? src : 'https://dictionary.cambridge.org' + src;
+                // result += `Found UK audio: ${audioUrlUk}\n`;
+              }
+            }
+          }
+        }
+        
+        if (!audioUrlUs) {
+          // Try to find US audio element (audio2)
+          const usAudio = entry.querySelector('#audio2') || doc.querySelector('#audio2');
+          if (usAudio) {
+            const source = usAudio.querySelector('source[type="audio/mpeg"]');
+            if (source) {
+              const src = source.getAttribute('src');
+              if (src) {
+                audioUrlUs = src.startsWith('http') ? src : 'https://dictionary.cambridge.org' + src;
+                // result += `Found US audio: ${audioUrlUs}\n`;
+              }
+            }
+          }
+        }
+
+        // Fallback: look for any audio elements and their sources
+        if (!audioUrlUk || !audioUrlUs) {
+          const allAudios = doc.querySelectorAll('audio');
+          // result += `Total audio elements found: ${allAudios.length}\n`;
+          
+          allAudios.forEach((audio, index) => {
+            const id = audio.getAttribute('id') || '';
+            const source = audio.querySelector('source[type="audio/mpeg"]');
+            const src = source ? source.getAttribute('src') : null;
+            
+            // result += `Audio ${index + 1}: id="${id}", src="${src}"\n`;
+            
+            if (src) {
+              const fullSrc = src.startsWith('http') ? src : 'https://dictionary.cambridge.org' + src;
+              
+              // Assign based on ID or order
+              if ((id === 'audio1' || index === 0) && !audioUrlUk) {
+                audioUrlUk = fullSrc;
+                // result += `Assigned as UK audio: ${audioUrlUk}\n`;
+              } else if ((id === 'audio2' || index === 1) && !audioUrlUs) {
+                audioUrlUs = fullSrc;
+                // result += `Assigned as US audio: ${audioUrlUs}\n`;
+              }
+            }
+          });
         }
 
         // Get part of speech
@@ -230,6 +308,17 @@ server.tool(
             result += '\n';
             defCount++;
           }
+        }
+      }
+
+      // Add audio URLs to the result if found
+      if (audioUrlUk || audioUrlUs) {
+        result += '\n--- Audio URLs ---\n';
+        if (audioUrlUk) {
+          result += `UK pronunciation: ${audioUrlUk}\n`;
+        }
+        if (audioUrlUs) {
+          result += `US pronunciation: ${audioUrlUs}\n`;
         }
       }
 
