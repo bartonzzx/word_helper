@@ -82,12 +82,12 @@ server.tool(
                 {
                   url: audioUrlUk,
                   filename: `${word}_uk.mp3`,
-                  fields: ["Word reading"]
+                  fields: ["Pronunciation UK"]
                 },
                 {
                   url: audioUrlUs,
                   filename: `${word}_us.mp3`,
-                  fields: ["Word reading"]
+                  fields: ["Pronunciation US"]
                 }
               ]
             }
