@@ -40,7 +40,7 @@ server.tool(
     other_forms, 
     example, 
     chinese_meaning, 
-    deckName = "Geography", 
+    deckName, 
     modelName = "Word Cloze",
     audioUrlUk,
     audioUrlUs
