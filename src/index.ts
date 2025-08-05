@@ -45,6 +45,7 @@ server.tool(
     audioUrlUk,
     audioUrlUs
   }: { 
+    
     word: string; 
     properties: string; 
     synonyms: string; 
@@ -70,7 +71,9 @@ server.tool(
               deckName: deckName,
               modelName: modelName,
               fields: {
+                Word_field: `${word}[${deckName}]`,
                 Word: word,
+                Fieldd: deckName,
                 Properties: `{{c1::${convertNewlines(properties)}}}`,
                 Synonym: `{{c1::${convertNewlines(synonyms)}}}`,
                 Antonym: `{{c1::${convertNewlines(antonyms)}}}`,
@@ -89,7 +92,8 @@ server.tool(
                   filename: `${word}_us.mp3`,
                   fields: ["Pronunciation US"]
                 }
-              ]
+              ],
+              tags: [deckName]
             }
           ]
         }
