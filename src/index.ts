@@ -17,13 +17,164 @@ const server = new McpServer({
 
 // Register tools
 server.tool(
+  "anki_edit_note",
+  "Edit a note in Anki",
+  {
+    noteId: z.number().describe("The ID of the note to edit"),
+    fieldName: z.string().describe("The name of the field to edit"),
+    newValue: z.string().describe("The new value for the field"),
+  },
+  async ({ noteId, fieldName, newValue }: { noteId: number; fieldName: string; newValue: string }) => {
+    try {
+      const ankiRequest = {
+        action: "updateNote",
+        version: 6,
+        params: {
+          note: {
+            id: noteId,
+            fields: {
+              [fieldName]: `{{c1::${newValue}}}`,
+            },
+          },
+        },
+      };
+
+      const response = await fetch("http://localhost:8765", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(ankiRequest),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (result.error) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to edit note in Anki: ${result.error}`,
+            },
+          ],
+        };
+      }
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Successfully edited note with ID ${noteId}. Field "${fieldName}" updated to "${newValue}".`,
+          },
+        ],
+      };
+    } catch (error) {
+      console.error("Error editing note in Anki:", error);
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Failed to edit note in Anki. Error: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        ],
+      };
+    }
+  },
+);
+server.tool(
+  "anki_search_note",
+  "Search note in Anki",
+  {
+    tag: z.string().describe("The tag to search for, e.g., 'Geography'"),
+    word: z.string().optional().describe("The word to search for, e.g., 'lava'"),
+  },
+  async ({ tag, word }: { tag: string; word?: string }) => {
+    try {
+      const query = word ? `tag:${tag} Word:${word}` : `tag:${tag}`;
+      const ankiRequest = {
+        action: "notesInfo",
+        version: 6,
+        params: {
+          query: query,
+        },
+      };
+
+      const response = await fetch("http://localhost:8765", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(ankiRequest),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (result.error) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to search note in Anki: ${result.error}`,
+            },
+          ],
+        };
+      }
+
+      if (result.result.length === 0) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `No notes found in Anki for tag "${tag}" and word "${word}".`,
+            },
+          ],
+        };
+      } else {
+        const responseContent: string[] = [];
+        result.result.forEach((note: any) => {
+          const noteId = note.noteId;
+          responseContent.push(`Note ID: ${noteId}`);
+          responseContent.push(`Word: ${note.fields.Word.value}`);
+        });
+        return {
+          content: [
+            {
+              type: "text",
+              text: responseContent.join("\n"),
+            },
+          ],
+        };
+      }
+    } catch (error) {
+      console.error("Error searching note in Anki:", error);
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Failed to search note in Anki for tag "${tag}" and word "${word}". Error: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        ],
+      };
+    }
+  },
+);
+server.tool(
   "anki_add_note",
   "Add a note to Anki",
   {
     word: z.string().describe("The word to add"),
     properties: z.string().describe("Part of speech and properties of the word"),
-    synonyms: z.string().describe("Synonyms of the word"),
-    antonyms: z.string().describe("Antonyms of the word"),
+    definition: z.string().describe("Definition of the word"),
+    synonym: z.string().describe("Synonym of the word"),
+    antonym: z.string().describe("Antonym of the word"),
     other_forms: z.string().describe("Other forms of the word"),
     example: z.string().describe("Example sentences using the word"),
     chinese_meaning: z.string().describe("Chinese meaning of the word"),
@@ -35,8 +186,9 @@ server.tool(
   async ({ 
     word, 
     properties, 
-    synonyms, 
-    antonyms, 
+    definition, 
+    synonym, 
+    antonym, 
     other_forms, 
     example, 
     chinese_meaning, 
@@ -48,8 +200,9 @@ server.tool(
     
     word: string; 
     properties: string; 
-    synonyms: string; 
-    antonyms: string; 
+    definition: string; 
+    synonym: string; 
+    antonym: string; 
     other_forms: string; 
     example: string; 
     chinese_meaning: string; 
@@ -75,11 +228,12 @@ server.tool(
                 Word: word,
                 Fieldd: deckName,
                 Properties: `{{c1::${convertNewlines(properties)}}}`,
-                Synonym: `{{c1::${convertNewlines(synonyms)}}}`,
-                Antonym: `{{c1::${convertNewlines(antonyms)}}}`,
-                Other_forms: `{{c1::${convertNewlines(other_forms)}}}`,
-                Example: `{{c1::${convertNewlines(example)}}}`,
-                Chinese_meaning: `{{c1::${convertNewlines(chinese_meaning)}}}`
+                Definition: `{{c1::${convertNewlines(definition)}}`,
+                Synonym: `{{c1::${convertNewlines(synonym)}}`,
+                Antonym: `{{c1::${convertNewlines(antonym)}}`,
+                Other_forms: `{{c1::${convertNewlines(other_forms)}}`,
+                Example: `{{c1::${convertNewlines(example)}}`,
+                Chinese_meaning: `{{c1::${convertNewlines(chinese_meaning)}}`,
               },
               audio: [
                 {
